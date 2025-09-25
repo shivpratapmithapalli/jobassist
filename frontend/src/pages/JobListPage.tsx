@@ -126,7 +126,7 @@ export function JobListPage() {
           className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4"
         >
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2  mt-10">
               Job Applications 
             </h1>
             <p className="text-gray-400 text-lg">

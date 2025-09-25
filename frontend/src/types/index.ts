@@ -1,7 +1,7 @@
 export interface User {
   id: string;
-  name: string;
   email: string;
+  name?: string;
   phone?: string;
   location?: string;
   currentRole?: string;
@@ -14,6 +14,9 @@ export interface User {
     github?: string;
     portfolio?: string;
   };
+  // Supabase auth metadata
+  created_at?: string;
+  email_verified?: boolean;
 }
 
 export interface Education {

@@ -1,65 +1,179 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, JobApplication, UploadedResume } from '../types';
+import { supabase } from '../lib/supabase';
+import type { AuthError, Session } from '@supabase/supabase-js';
 
-interface AppState {
+interface AuthState {
   user: User | null;
+  session: Session | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+interface AppState extends AuthState {
   jobApplications: JobApplication[];
   uploadedResume: UploadedResume | null;
-  isAuthenticated: boolean;
   
-  // Actions
-  setUser: (user: User) => void;
-  login: (email: string, password: string) => void;
-  logout: () => void;
+  // Auth Actions
+  signUp: (email: string, password: string, userData?: Partial<User>) => Promise<{ error: AuthError | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
+  updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
+  setAuthState: (session: Session | null) => void;
+  setError: (error: string | null) => void;
+  setLoading: (loading: boolean) => void;
+  
+  // App Actions
   addJobApplication: (application: JobApplication) => void;
   updateJobApplication: (id: string, updates: Partial<JobApplication>) => void;
   deleteJobApplication: (id: string) => void;
   setUploadedResume: (resume: UploadedResume) => void;
-  updateUser: (updates: Partial<User>) => void;
+  updateUser: (updates: Partial<User>) => Promise<void>;
 }
+
+const createUserFromAuthUser = (authUser: any, additionalData: Partial<User> = {}): User => {
+  return {
+    id: authUser.id,
+    email: authUser.email,
+    name: additionalData.name || authUser.user_metadata?.name || '',
+    phone: additionalData.phone || '',
+    location: additionalData.location || '',
+    currentRole: additionalData.currentRole || '',
+    experienceLevel: additionalData.experienceLevel || 'Entry',
+    salaryExpectation: additionalData.salaryExpectation || '',
+    education: additionalData.education || [],
+    skills: additionalData.skills || [],
+    links: additionalData.links || {},
+    created_at: authUser.created_at,
+    email_verified: authUser.email_confirmed_at ? true : false,
+  };
+};
 
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
+      // Initial state
       user: null,
+      session: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
       jobApplications: [],
       uploadedResume: null,
-      isAuthenticated: false,
 
-      setUser: (user) => set({ user, isAuthenticated: true }),
-      
-      login: (email, password) => {
-        // Mock login - in real app, this would call an API
-        const mockUser: User = {
-          id: '1',
-          name: 'John Doe',
+      // Auth Actions
+      signUp: async (email: string, password: string, userData?: Partial<User>) => {
+        set({ isLoading: true, error: null });
+        
+        const { data, error } = await supabase.auth.signUp({
           email,
-          phone: '+1 (555) 123-4567',
-          location: 'San Francisco, CA',
-          currentRole: 'Frontend Developer',
-          experienceLevel: 'Mid',
-          salaryExpectation: '$80,000 - $120,000',
-          education: [
-            {
-              id: '1',
-              degree: 'Bachelor of Computer Science',
-              institution: 'University of California',
-              graduationYear: 2020
-            }
-          ],
-          skills: ['React', 'TypeScript', 'Node.js', 'Python', 'AWS'],
-          links: {
-            linkedin: 'https://linkedin.com/in/johndoe',
-            github: 'https://github.com/johndoe',
-            portfolio: 'https://johndoe.dev'
+          password,
+          options: {
+            data: userData ? {
+              name: userData.name,
+              phone: userData.phone,
+              location: userData.location
+            } : {}
           }
-        };
-        set({ user: mockUser, isAuthenticated: true });
+        });
+
+        if (error) {
+          set({ isLoading: false, error: error.message });
+          return { error };
+        }
+
+        if (data.user) {
+          const user = createUserFromAuthUser(data.user, userData);
+          set({ 
+            user,
+            session: data.session,
+            isAuthenticated: !!data.session,
+            isLoading: false,
+            error: null
+          });
+        }
+
+        return { error: null };
       },
 
-      logout: () => set({ user: null, isAuthenticated: false }),
+      signIn: async (email: string, password: string) => {
+        set({ isLoading: true, error: null });
+        
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
+        if (error) {
+          set({ isLoading: false, error: error.message });
+          return { error };
+        }
+
+        if (data.user) {
+          const user = createUserFromAuthUser(data.user);
+          set({ 
+            user,
+            session: data.session,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null
+          });
+        }
+
+        return { error: null };
+      },
+
+      signOut: async () => {
+        set({ isLoading: true });
+        await supabase.auth.signOut();
+        set({ 
+          user: null,
+          session: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null
+        });
+      },
+
+      resetPassword: async (email: string) => {
+        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        return { error };
+      },
+
+      updatePassword: async (password: string) => {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) {
+          set({ error: error.message });
+        }
+        return { error };
+      },
+
+      setAuthState: (session: Session | null) => {
+        if (session?.user) {
+          const user = createUserFromAuthUser(session.user);
+          set({ 
+            user,
+            session,
+            isAuthenticated: true,
+            error: null
+          });
+        } else {
+          set({ 
+            user: null,
+            session: null,
+            isAuthenticated: false,
+            error: null
+          });
+        }
+      },
+
+      setError: (error: string | null) => set({ error }),
+      setLoading: (isLoading: boolean) => set({ isLoading }),
+
+      // App Actions (unchanged)
       addJobApplication: (application) => 
         set((state) => ({ 
           jobApplications: [...state.jobApplications, application] 
@@ -79,18 +193,34 @@ export const useStore = create<AppState>()(
 
       setUploadedResume: (resume) => set({ uploadedResume: resume }),
 
-      updateUser: (updates) =>
-        set((state) => ({
-          user: state.user ? { ...state.user, ...updates } : null
-        }))
+      updateUser: async (updates: Partial<User>) => {
+        const { error } = await supabase.auth.updateUser({
+          data: updates
+        });
+        
+        if (!error) {
+          set((state) => ({
+            user: state.user ? { ...state.user, ...updates } : null
+          }));
+        }
+      },
     }),
     {
       name: 'job-assistant-storage',
       partialize: (state) => ({ 
-        user: state.user, 
         jobApplications: state.jobApplications,
-        isAuthenticated: state.isAuthenticated 
+        // Don't persist auth state - let Supabase handle it
       })
     }
   )
 );
+
+// Initialize auth state from Supabase session
+supabase.auth.getSession().then(({ data: { session } }) => {
+  useStore.getState().setAuthState(session);
+});
+
+// Listen for auth changes
+supabase.auth.onAuthStateChange((_event, session) => {
+  useStore.getState().setAuthState(session);
+});

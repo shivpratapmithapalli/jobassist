@@ -65,7 +65,7 @@ export function LandingPage() {
                 Sign In
               </Button>
             </Link>
-            <Link to="/login">
+            <Link to="/login?mode=signup">
               <Button className="bg-primary-600 hover:bg-primary-700">
                 Get Started
               </Button>
@@ -96,7 +96,7 @@ export function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link to="/login">
+              <Link to="/login?mode=signup">
                 <Button 
                   size="lg" 
                   className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-4 text-lg font-semibold group"
@@ -229,7 +229,7 @@ export function LandingPage() {
                 Join thousands of professionals who have already accelerated their careers with JobAssist. 
                 Start your free trial today and see the difference AI can make.
               </p>
-              <Link to="/login">
+              <Link to="/login?mode=signup">
                 <Button 
                   size="lg" 
                   className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-4 text-lg font-semibold"

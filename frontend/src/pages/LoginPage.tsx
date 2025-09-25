@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Briefcase, Mail, Lock, User } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -9,7 +9,10 @@ import { GlassCard } from '../components/ui/glass-card';
 import { useStore } from '../store/useStore';
 
 export function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode');
+  
+  const [isLogin, setIsLogin] = useState(mode !== 'signup');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,10 +23,17 @@ export function LoginPage() {
     rememberMe: false
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
   
   const navigate = useNavigate();
-  const { login } = useStore();
+  const { signIn, signUp, error, isAuthenticated } = useStore();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/applications');
+    }
+  }, [isAuthenticated, navigate]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -58,14 +68,31 @@ export function LoginPage() {
     
     if (!validateForm()) return;
 
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      login(formData.email, formData.password);
-      navigate('/applications');
-      setIsLoading(false);
-    }, 1500);
+    setAuthLoading(true);
+
+    try {
+      if (isLogin) {
+        const { error: authError } = await signIn(formData.email, formData.password);
+        if (!authError) {
+          // Navigation will be handled by useEffect when isAuthenticated changes
+          return;
+        }
+      } else {
+        const userData = {
+          name: formData.name,
+        };
+        const { error: authError } = await signUp(formData.email, formData.password, userData);
+        if (!authError) {
+          // Navigate to email confirmation page with email as query parameter
+          navigate(`/email-confirmation?email=${encodeURIComponent(formData.email)}`);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Authentication error:', err);
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -128,6 +155,17 @@ export function LoginPage() {
               Sign Up
             </button>
           </div>
+
+          {/* Auth Error Display */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mb-4"
+            >
+              <p className="text-red-400 text-sm">{error}</p>
+            </motion.div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -282,10 +320,10 @@ export function LoginPage() {
 
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={authLoading}
               className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 transition-all duration-200 disabled:opacity-50"
             >
-              {isLoading ? (
+              {authLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                   {isLogin ? 'Signing In...' : 'Creating Account...'}
@@ -307,9 +345,9 @@ export function LoginPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-4 grid grid-cols-1 gap-3">
               <Button variant="outline" className="border-gray-700 bg-gray-800/50 text-gray-300 hover:bg-gray-700/50">
-                <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                   <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -317,12 +355,7 @@ export function LoginPage() {
                 </svg>
                 Google
               </Button>
-              <Button variant="outline" className="border-gray-700 bg-gray-800/50 text-gray-300 hover:bg-gray-700/50">
-                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
-                </svg>
-                Twitter
-              </Button>
+
             </div>
           </div>
 
