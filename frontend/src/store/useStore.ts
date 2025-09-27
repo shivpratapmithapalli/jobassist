@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, JobApplication, UploadedResume } from '../types';
-import { supabase } from '../lib/supabase';
+import { supabase, configureSessionStorage } from '../lib/supabase';
 import type { AuthError, Session } from '@supabase/supabase-js';
 
 interface AuthState {
@@ -18,7 +18,7 @@ interface AppState extends AuthState {
   
   // Auth Actions
   signUp: (email: string, password: string, userData?: Partial<User>) => Promise<{ error: AuthError | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
@@ -99,8 +99,11 @@ export const useStore = create<AppState>()(
         return { error: null };
       },
 
-      signIn: async (email: string, password: string) => {
+      signIn: async (email: string, password: string, rememberMe: boolean = true) => {
         set({ isLoading: true, error: null });
+        
+        // Configure storage type before sign in
+        configureSessionStorage(rememberMe);
         
         const { data, error } = await supabase.auth.signInWithPassword({
           email,

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, Briefcase, Mail, Lock, User } from 'lucide-react';
+import { Eye, EyeOff, Briefcase, Mail, Lock, User, Shield } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { GlassCard } from '../components/ui/glass-card';
 import { useStore } from '../store/useStore';
+import { validatePassword, getPasswordStrengthColor, getPasswordStrengthText } from '../lib/passwordValidation';
 
 export function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -23,6 +24,7 @@ export function LoginPage() {
     rememberMe: false
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [passwordValidation, setPasswordValidation] = useState({ isValid: false, errors: [], strength: 'weak' as const });
   const [authLoading, setAuthLoading] = useState(false);
   
   const navigate = useNavigate();
@@ -46,8 +48,17 @@ export function LoginPage() {
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else if (isLogin) {
+      // For login, just check if password is provided
+      if (formData.password.length < 1) {
+        newErrors.password = 'Password is required';
+      }
+    } else {
+      // For signup, validate password strength
+      const validation = validatePassword(formData.password);
+      if (!validation.isValid) {
+        newErrors.password = validation.errors[0]; // Show first error
+      }
     }
 
     if (!isLogin) {
@@ -72,7 +83,7 @@ export function LoginPage() {
 
     try {
       if (isLogin) {
-        const { error: authError } = await signIn(formData.email, formData.password);
+        const { error: authError } = await signIn(formData.email, formData.password, formData.rememberMe);
         if (!authError) {
           // Navigation will be handled by useEffect when isAuthenticated changes
           return;
@@ -99,6 +110,12 @@ export function LoginPage() {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+    
+    // Real-time password validation for signup
+    if (field === 'password' && !isLogin && typeof value === 'string') {
+      const validation = validatePassword(value);
+      setPasswordValidation(validation);
     }
   };
 
@@ -256,6 +273,51 @@ export function LoginPage() {
                 >
                   {errors.password}
                 </motion.p>
+              )}
+              
+              {/* Password Strength Indicator for Signup */}
+              {!isLogin && formData.password && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">Password strength:</span>
+                    <span className={`text-xs font-medium ${getPasswordStrengthColor(passwordValidation.strength)}`}>
+                      <Shield className="inline h-3 w-3 mr-1" />
+                      {getPasswordStrengthText(passwordValidation.strength)}
+                    </span>
+                  </div>
+                  
+                  {passwordValidation.errors.length > 0 && (
+                    <div className="text-xs text-gray-400 space-y-1">
+                      <p>Password must contain:</p>
+                      <ul className="space-y-1 ml-2">
+                        <li className={`flex items-center ${/[a-z]/.test(formData.password) ? 'text-green-400' : 'text-gray-500'}`}>
+                          <span className="mr-2">{/[a-z]/.test(formData.password) ? '✓' : '○'}</span>
+                          Lowercase letter
+                        </li>
+                        <li className={`flex items-center ${/[A-Z]/.test(formData.password) ? 'text-green-400' : 'text-gray-500'}`}>
+                          <span className="mr-2">{/[A-Z]/.test(formData.password) ? '✓' : '○'}</span>
+                          Uppercase letter
+                        </li>
+                        <li className={`flex items-center ${/\d/.test(formData.password) ? 'text-green-400' : 'text-gray-500'}`}>
+                          <span className="mr-2">{/\d/.test(formData.password) ? '✓' : '○'}</span>
+                          Number
+                        </li>
+                        <li className={`flex items-center ${/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\?]/.test(formData.password) ? 'text-green-400' : 'text-gray-500'}`}>
+                          <span className="mr-2">{/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\?]/.test(formData.password) ? '✓' : '○'}</span>
+                          Special character
+                        </li>
+                        <li className={`flex items-center ${formData.password.length >= 8 ? 'text-green-400' : 'text-gray-500'}`}>
+                          <span className="mr-2">{formData.password.length >= 8 ? '✓' : '○'}</span>
+                          At least 8 characters
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </motion.div>
               )}
             </div>
 
