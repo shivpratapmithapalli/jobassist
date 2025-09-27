@@ -1,12 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, JobApplication, UploadedResume } from '../types';
-import { supabase, configureSessionStorage } from '../lib/supabase';
-import type { AuthError, Session } from '@supabase/supabase-js';
+import apiService, { type AuthResponse, type ApiError } from '../lib/api';
 
 interface AuthState {
   user: User | null;
-  session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -17,12 +15,10 @@ interface AppState extends AuthState {
   uploadedResume: UploadedResume | null;
   
   // Auth Actions
-  signUp: (email: string, password: string, userData?: Partial<User>) => Promise<{ error: AuthError | null }>;
-  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string, userData?: Partial<User>, rememberMe?: boolean) => Promise<{ error: string | null }>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
-  updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
-  setAuthState: (session: Session | null) => void;
+  initializeAuth: () => void;
   setError: (error: string | null) => void;
   setLoading: (loading: boolean) => void;
   
@@ -34,21 +30,22 @@ interface AppState extends AuthState {
   updateUser: (updates: Partial<User>) => Promise<void>;
 }
 
-const createUserFromAuthUser = (authUser: any, additionalData: Partial<User> = {}): User => {
+// Helper function to create user from API response
+const createUserFromApiResponse = (apiUser: AuthResponse): User => {
   return {
-    id: authUser.id,
-    email: authUser.email,
-    name: additionalData.name || authUser.user_metadata?.name || '',
-    phone: additionalData.phone || '',
-    location: additionalData.location || '',
-    currentRole: additionalData.currentRole || '',
-    experienceLevel: additionalData.experienceLevel || 'Entry',
-    salaryExpectation: additionalData.salaryExpectation || '',
-    education: additionalData.education || [],
-    skills: additionalData.skills || [],
-    links: additionalData.links || {},
-    created_at: authUser.created_at,
-    email_verified: authUser.email_confirmed_at ? true : false,
+    id: apiUser.id.toString(),
+    email: apiUser.email,
+    name: apiUser.name || '',
+    phone: apiUser.phone || '',
+    location: apiUser.location || '',
+    currentRole: apiUser.currentRole || '',
+    experienceLevel: (apiUser.experienceLevel as any) || 'Entry',
+    salaryExpectation: apiUser.salaryExpectation || '',
+    education: [],
+    skills: [],
+    links: {},
+    created_at: new Date().toISOString(),
+    email_verified: apiUser.emailVerified,
   };
 };
 
@@ -57,40 +54,34 @@ export const useStore = create<AppState>()(
     (set, get) => ({
       // Initial state
       user: null,
-      session: null,
-      isAuthenticated: false,
+      isAuthenticated: apiService.isAuthenticated(),
       isLoading: false,
       error: null,
       jobApplications: [],
       uploadedResume: null,
 
       // Auth Actions
-      signUp: async (email: string, password: string, userData?: Partial<User>) => {
+      signUp: async (email: string, password: string, userData?: Partial<User>, rememberMe: boolean = true) => {
         set({ isLoading: true, error: null });
         
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await apiService.register({
           email,
           password,
-          options: {
-            data: userData ? {
-              name: userData.name,
-              phone: userData.phone,
-              location: userData.location
-            } : {}
-          }
-        });
+          name: userData?.name || '',
+          phone: userData?.phone,
+          location: userData?.location
+        }, rememberMe);
 
         if (error) {
           set({ isLoading: false, error: error.message });
-          return { error };
+          return { error: error.message };
         }
 
-        if (data.user) {
-          const user = createUserFromAuthUser(data.user, userData);
+        if (data) {
+          const user = createUserFromApiResponse(data);
           set({ 
             user,
-            session: data.session,
-            isAuthenticated: !!data.session,
+            isAuthenticated: true,
             isLoading: false,
             error: null
           });
@@ -102,24 +93,17 @@ export const useStore = create<AppState>()(
       signIn: async (email: string, password: string, rememberMe: boolean = true) => {
         set({ isLoading: true, error: null });
         
-        // Configure storage type before sign in
-        configureSessionStorage(rememberMe);
-        
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        const { data, error } = await apiService.login({ email, password }, rememberMe);
 
         if (error) {
           set({ isLoading: false, error: error.message });
-          return { error };
+          return { error: error.message };
         }
 
-        if (data.user) {
-          const user = createUserFromAuthUser(data.user);
+        if (data) {
+          const user = createUserFromApiResponse(data);
           set({ 
             user,
-            session: data.session,
             isAuthenticated: true,
             isLoading: false,
             error: null
@@ -131,45 +115,43 @@ export const useStore = create<AppState>()(
 
       signOut: async () => {
         set({ isLoading: true });
-        await supabase.auth.signOut();
+        await apiService.logout();
         set({ 
           user: null,
-          session: null,
           isAuthenticated: false,
           isLoading: false,
           error: null
         });
       },
 
-      resetPassword: async (email: string) => {
-        const { error } = await supabase.auth.resetPasswordForEmail(email);
-        return { error };
-      },
-
-      updatePassword: async (password: string) => {
-        const { error } = await supabase.auth.updateUser({ password });
-        if (error) {
-          set({ error: error.message });
-        }
-        return { error };
-      },
-
-      setAuthState: (session: Session | null) => {
-        if (session?.user) {
-          const user = createUserFromAuthUser(session.user);
-          set({ 
-            user,
-            session,
-            isAuthenticated: true,
-            error: null
-          });
-        } else {
-          set({ 
-            user: null,
-            session: null,
-            isAuthenticated: false,
-            error: null
-          });
+      initializeAuth: async () => {
+        const token = apiService.getToken();
+        if (token) {
+          // Try to get user profile to validate token
+          const { data, error } = await apiService.getUserProfile();
+          if (data) {
+            // Convert backend user to frontend user format
+            const user: User = {
+              id: data.id?.toString() || '',
+              email: data.email || '',
+              name: data.name || '',
+              phone: data.phone || '',
+              location: data.location || '',
+              currentRole: data.currentRole || '',
+              experienceLevel: data.experienceLevel || 'Entry',
+              salaryExpectation: data.salaryExpectation || '',
+              education: [],
+              skills: [],
+              links: {},
+              created_at: data.createdAt || new Date().toISOString(),
+              email_verified: data.emailVerified || false,
+            };
+            set({ user, isAuthenticated: true, error: null });
+          } else {
+            // Token is invalid, clear it
+            apiService.clearToken();
+            set({ user: null, isAuthenticated: false, error: null });
+          }
         }
       },
 
@@ -197,14 +179,26 @@ export const useStore = create<AppState>()(
       setUploadedResume: (resume) => set({ uploadedResume: resume }),
 
       updateUser: async (updates: Partial<User>) => {
-        const { error } = await supabase.auth.updateUser({
-          data: updates
-        });
+        const { data, error } = await apiService.updateUserProfile(updates);
         
-        if (!error) {
-          set((state) => ({
-            user: state.user ? { ...state.user, ...updates } : null
-          }));
+        if (!error && data) {
+          // Convert backend user to frontend user format
+          const user: User = {
+            id: data.id?.toString() || '',
+            email: data.email || '',
+            name: data.name || '',
+            phone: data.phone || '',
+            location: data.location || '',
+            currentRole: data.currentRole || '',
+            experienceLevel: data.experienceLevel || 'Entry',
+            salaryExpectation: data.salaryExpectation || '',
+            education: updates.education || [],
+            skills: updates.skills || [],
+            links: updates.links || {},
+            created_at: data.createdAt || new Date().toISOString(),
+            email_verified: data.emailVerified || false,
+          };
+          set({ user });
         }
       },
     }),
@@ -212,18 +206,11 @@ export const useStore = create<AppState>()(
       name: 'job-assistant-storage',
       partialize: (state) => ({ 
         jobApplications: state.jobApplications,
-        // Don't persist auth state - let Supabase handle it
+        // Don't persist auth state - handled by apiService
       })
     }
   )
 );
 
-// Initialize auth state from Supabase session
-supabase.auth.getSession().then(({ data: { session } }) => {
-  useStore.getState().setAuthState(session);
-});
-
-// Listen for auth changes
-supabase.auth.onAuthStateChange((_event, session) => {
-  useStore.getState().setAuthState(session);
-});
+// Initialize auth state on app start
+useStore.getState().initializeAuth();
