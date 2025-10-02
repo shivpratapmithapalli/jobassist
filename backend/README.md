@@ -1,6 +1,6 @@
-# JobAssist Backend
+# JobHive Backend
 
-Spring Boot backend API for the JobAssist job application management platform.
+Spring Boot backend API for the JobHive job application management platform.
 
 ## 🚀 Quick Start
 
@@ -22,8 +22,8 @@ Spring Boot backend API for the JobAssist job application management platform.
    **Option A: PostgreSQL (Recommended for production)**
    ```bash
    # Create database
-   createdb jobassist_db
-   createuser jobassist_user --interactive
+   createdb jobhive_db
+   createuser jobhive_user --interactive
    
    # Update application.properties with your DB credentials
    ```
@@ -86,9 +86,9 @@ Key configuration options in `application.properties`:
 
 ```properties
 # Database
-spring.datasource.url=jdbc:postgresql://localhost:5432/jobassist_db
-spring.datasource.username=jobassist_user
-spring.datasource.password=jobassist_password
+spring.datasource.url=jdbc:postgresql://localhost:5432/jobhive_db
+spring.datasource.username=jobhive_user
+spring.datasource.password=jobhive_password
 
 # JWT
 app.jwt.secret=YourSecretKey
@@ -110,7 +110,7 @@ app.cors.allowed-origins=http://localhost:5173,http://localhost:3000
 ## 🏗️ Architecture
 
 ```
-backend/src/main/java/com/jobassist/
+backend/src/main/java/com/jobhive/
 ├── controller/          # REST endpoints
 ├── service/            # Business logic
 ├── repository/         # Data access layer
@@ -140,7 +140,7 @@ server.port=8081
 sudo service postgresql status
 
 # Create database manually
-psql -c "CREATE DATABASE jobassist_db;"
+psql -c "CREATE DATABASE jobhive_db;"
 ```
 
 **CORS errors from frontend**:
@@ -164,7 +164,7 @@ mvn test
 **Build for production**:
 ```bash
 mvn clean package
-java -jar target/jobassist-backend-1.0.0.jar
+java -jar target/jobhive-backend-1.0.0.jar
 ```
 
 ## 🔮 Next Features

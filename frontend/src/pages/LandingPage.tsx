@@ -57,7 +57,7 @@ export function LandingPage() {
             <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
               <Briefcase className="h-5 w-5 text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">JobAssist</span>
+            <span className="text-2xl font-bold text-white">JobHive</span>
           </div>
           <div className="flex items-center space-x-4">
             <Link to="/login">
@@ -128,7 +128,7 @@ export function LandingPage() {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Why Choose JobAssist?
+              Why Choose JobHive?
             </h2>
             <p className="text-gray-300 text-lg">
               Join thousands of professionals who have accelerated their careers
@@ -226,7 +226,7 @@ export function LandingPage() {
                 Ready to Transform Your Career?
               </h2>
               <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                Join thousands of professionals who have already accelerated their careers with JobAssist. 
+                Join thousands of professionals who have already accelerated their careers with JobHive. 
                 Start your free trial today and see the difference AI can make.
               </p>
               <Link to="/login?mode=signup">
@@ -250,7 +250,7 @@ export function LandingPage() {
               <div className="w-6 h-6 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
                 <Briefcase className="h-4 w-4 text-white" />
               </div>
-              <span className="text-lg font-bold text-white">JobAssist</span>
+              <span className="text-lg font-bold text-white">JobHive</span>
             </div>
             <div className="flex space-x-6 text-gray-400">
               <a href="#" className="hover:text-white transition-colors">Privacy</a>
@@ -261,7 +261,7 @@ export function LandingPage() {
           </div>
           <div className="text-center mt-8 pt-8 border-t border-gray-800/50">
             <p className="text-gray-500">
-              © 2025 JobAssist. All rights reserved. Built with ❤️ for job seekers worldwide.
+              © 2025 JobHive. All rights reserved. Built with ❤️ for job seekers worldwide.
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-# JobAssist
+# JobHive
 
 🚀 **AI-powered job application management platform** with React frontend and Spring Boot backend.
 
@@ -15,7 +15,7 @@
 ## 🏗️ Architecture
 
 ```
-JobAssist/
+JobHive/
 ├── frontend/           # React + TypeScript SPA
 │   ├── React 18 + Vite
 │   ├── TailwindCSS + shadcn/ui
@@ -115,14 +115,14 @@ curl -X POST http://localhost:8080/api/v1/user/login \
 ## 📁 Project Structure
 
 ```
-JobAssist/
+JobHive/
 ├── frontend/src/
 │   ├── components/     # Reusable UI components
 │   ├── pages/         # Route-level components
 │   ├── store/         # Zustand state management
 │   ├── lib/           # API service & utilities
 │   └── types/         # TypeScript definitions
-└── backend/src/main/java/com/jobassist/
+└── backend/src/main/java/com/jobhive/
     ├── controller/    # REST endpoints
     ├── service/       # Business logic
     ├── repository/    # Data access

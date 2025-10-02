@@ -83,7 +83,7 @@ Assuming you have a Dockerfile at the backend root; run with env vars:
 
 ```bash
 # build
-docker build -t jobassist-backend ./backend
+docker build -t jobhive-backend ./backend
 
 # run with PostgreSQL and JWT secret
 docker run --rm -p 8080:8080 \
@@ -94,7 +94,7 @@ docker run --rm -p 8080:8080 \
   -e SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT="org.hibernate.dialect.PostgreSQLDialect" \
   -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
   -e APP_JWT_SECRET="base64:<base64-encoded-64-byte-secret>" \
-  jobassist-backend
+  jobhive-backend
 ```
 
 ## Notes & recommendations

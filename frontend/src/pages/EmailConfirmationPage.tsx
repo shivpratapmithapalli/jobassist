@@ -24,7 +24,7 @@ export function EmailConfirmationPage() {
           <div className="mb-4">
             <div className="flex items-center justify-center space-x-2 mb-2">
               <Briefcase className="h-5 w-5 text-primary-400" />
-              <span className="text-xl font-bold text-white">JobAssist</span>
+              <span className="text-xl font-bold text-white">JobHive</span>
             </div>
           </div>
 
@@ -66,8 +66,8 @@ export function EmailConfirmationPage() {
           <div className="mt-8 pt-6 border-t border-gray-700/50">
             <p className="text-xs text-gray-500">
               Need help? Contact us at{' '}
-              <a href="mailto:support@jobassist.com" className="text-primary-400 hover:text-primary-300">
-                support@jobassist.com
+              <a href="mailto:support@jobhive.com" className="text-primary-400 hover:text-primary-300">
+                support@jobhive.com
               </a>
             </p>
           </div>

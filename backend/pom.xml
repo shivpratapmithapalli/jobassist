@@ -11,11 +11,11 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.jobassist</groupId>
-    <artifactId>jobassist-backend</artifactId>
+    <groupId>com.jobhive</groupId>
+    <artifactId>jobhive-backend</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    <name>JobAssist Backend</name>
+    <name>JobHive Backend</name>
     <description>AI-powered job application management platform backend</description>
 
     <properties>

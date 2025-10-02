@@ -48,7 +48,7 @@ export function Navbar() {
             <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
               <Briefcase className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-white">JobAssist</span>
+            <span className="text-xl font-bold text-white">JobHive</span>
           </Link>
 
           {/* Desktop Navigation */}

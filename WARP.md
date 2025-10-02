@@ -4,7 +4,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-JobAssist (also referred to as JobHive) is an AI-powered job application management platform built as a React TypeScript SPA. The application helps job seekers track applications, get AI-powered resume suggestions, and manage their career journey with a modern glassmorphism dark theme.
+JobHive (also referred to as JobHive) is an AI-powered job application management platform built as a React TypeScript SPA. The application helps job seekers track applications, get AI-powered resume suggestions, and manage their career journey with a modern glassmorphism dark theme.
 
 ## Architecture
 

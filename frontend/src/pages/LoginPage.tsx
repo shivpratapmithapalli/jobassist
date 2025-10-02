@@ -138,7 +138,7 @@ export function LoginPage() {
               <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center">
                 <Briefcase className="h-6 w-6 text-white" />
               </div>
-              <span className="text-2xl font-bold text-white">JobAssist</span>
+              <span className="text-2xl font-bold text-white">JobHive</span>
             </Link>
             
             <h1 className="text-2xl font-bold text-white mb-2">

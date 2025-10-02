@@ -1,6 +1,6 @@
-# JobAssist - AI-Powered Job Application Assistant
+# JobHive - AI-Powered Job Application Assistant
 
-A comprehensive job application management platform built with React, TypeScript, and modern web technologies. JobAssist helps job seekers track applications, get AI-powered resume suggestions, and manage their career journey with a beautiful glassmorphism dark theme.
+A comprehensive job application management platform built with React, TypeScript, and modern web technologies. JobHive helps job seekers track applications, get AI-powered resume suggestions, and manage their career journey with a beautiful glassmorphism dark theme.
 
 ## ✨ Features
 
