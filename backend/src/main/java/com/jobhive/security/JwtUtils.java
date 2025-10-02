@@ -62,7 +62,7 @@ public class JwtUtils {
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + jwtRefreshExpirationMs))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+                .signWith(getSigningKey(), Jwts.SIG.HS512)
                 .compact();
     }
 
@@ -78,7 +78,7 @@ public class JwtUtils {
                 .subject(subject)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+                .signWith(getSigningKey(), Jwts.SIG.HS512)
                 .compact();
     }
 
